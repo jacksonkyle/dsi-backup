@@ -1,0 +1,57 @@
+services:
+  dsi-backup:
+    build: .
+    restart: unless-stopped
+    environment:
+      # ── Required ──────────────────────────────────────────────────────────
+      # Name of the GCS bucket to store backups in
+      GCS_BUCKET: your-bucket-name
+
+      # Service account key JSON, base64-encoded.
+      # Generate with:  base64 -w0 service-account.json
+      # Store this in Dokploy's "Environment Variables" or a Docker secret.
+      GCS_SERVICE_ACCOUNT_JSON: ""
+
+      # ── Optional ──────────────────────────────────────────────────────────
+      # GCS project ID (usually not required but useful for bucket creation)
+      # GCS_PROJECT_ID: your-project-id
+
+      # Path inside the container where volumes are mounted (default: /volumes)
+      VOLUMES_PATH: /volumes
+
+      # Folder prefix inside the bucket (default: dokploy-backups)
+      BACKUP_PREFIX: dokploy-backups
+
+      # Label embedded in each archive filename to identify the host
+      BACKUP_HOSTNAME: my-server
+
+      # Cron schedule — default is 02:00 UTC every day
+      BACKUP_SCHEDULE: "0 2 * * *"
+
+      # Delete archives older than this many days (0 = keep forever)
+      BACKUP_RETENTION_DAYS: "30"
+
+      # Set to "true" to run a backup immediately when the container starts
+      RUN_ON_STARTUP: "false"
+
+    volumes:
+      # Mount each Dokploy Docker volume read-only under /volumes/<name>.
+      # The directory name becomes the label in the backup archive.
+      #
+      # Replace the example volume names below with your actual volume names.
+      # You can find them with:  docker volume ls
+      #
+      # - your_app_data:/volumes/app-data:ro
+      # - your_db_data:/volumes/db-data:ro
+      - example_volume:/volumes/example-volume:ro
+
+      # If you prefer to mount the service-account key as a file instead of
+      # encoding it in GCS_SERVICE_ACCOUNT_JSON, uncomment the lines below
+      # and set GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcs-key.json
+      # - /path/to/service-account.json:/secrets/gcs-key.json:ro
+
+# Declare external volumes that already exist in Dokploy.
+# Remove any volumes that are not used above.
+volumes:
+  example_volume:
+    external: true

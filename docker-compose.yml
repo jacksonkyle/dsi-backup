@@ -16,8 +16,12 @@ services:
       # GCS project ID (usually not required but useful for bucket creation)
       # GCS_PROJECT_ID: your-project-id
 
-      # Path inside the container where volumes are mounted (default: /volumes)
-      VOLUMES_PATH: /volumes
+      # Where host volumes are mounted inside the container
+      VOLUMES_PATH: /host-volumes
+
+      # Docker stores volume data in a _data subdirectory; leave as "_data"
+      # when using the host volumes mount below. Set to "" for explicit mounts.
+      VOLUMES_DATA_SUBDIR: "_data"
 
       # Folder prefix inside the bucket (default: dokploy-backups)
       BACKUP_PREFIX: dokploy-backups
@@ -35,23 +39,13 @@ services:
       RUN_ON_STARTUP: "false"
 
     volumes:
-      # Mount each Dokploy Docker volume read-only under /volumes/<name>.
-      # The directory name becomes the label in the backup archive.
-      #
-      # Replace the example volume names below with your actual volume names.
-      # You can find them with:  docker volume ls
-      #
-      # - your_app_data:/volumes/app-data:ro
-      # - your_db_data:/volumes/db-data:ro
-      - example_volume:/volumes/example-volume:ro
+      # Mount the entire Docker volumes directory from the host (read-only).
+      # This gives the backup container access to ALL named volumes automatically —
+      # no need to list them individually. Docker stores each volume's data at
+      # /var/lib/docker/volumes/<name>/_data on the host.
+      - /var/lib/docker/volumes:/host-volumes:ro
 
       # If you prefer to mount the service-account key as a file instead of
       # encoding it in GCS_SERVICE_ACCOUNT_JSON, uncomment the lines below
       # and set GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcs-key.json
       # - /path/to/service-account.json:/secrets/gcs-key.json:ro
-
-# Declare external volumes that already exist in Dokploy.
-# Remove any volumes that are not used above.
-volumes:
-  example_volume:
-    external: true

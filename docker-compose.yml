@@ -49,3 +49,40 @@ services:
       # encoding it in GCS_SERVICE_ACCOUNT_JSON, uncomment the lines below
       # and set GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcs-key.json
       # - /path/to/service-account.json:/secrets/gcs-key.json:ro
+
+  splunk-alert:
+    build: .
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/splunk-entrypoint.sh"]
+    environment:
+      # ── Required ──────────────────────────────────────────────────────────
+      # Full URL to your Splunk REST API (include port — usually 8089)
+      SPLUNK_HOST: https://splunk.mycompany.com:8089
+
+      # API token from Splunk Settings > Tokens
+      SPLUNK_TOKEN: ""
+
+      # SPL search query — any valid Splunk search expression
+      SPLUNK_QUERY: "search index=main (level=error OR level=critical)"
+
+      # Teams incoming webhook URL (Teams channel > Connectors > Incoming Webhook)
+      TEAMS_WEBHOOK_URL: ""
+
+      # ── Optional ──────────────────────────────────────────────────────────
+      # How far back to search on each run (must cover the CHECK_SCHEDULE interval)
+      SPLUNK_TIMERANGE: "-15m"
+
+      # Number of results that must be found before an alert fires
+      ALERT_THRESHOLD: "1"
+
+      # How many sample log lines to include in the Teams message
+      RESULT_SAMPLE_SIZE: "5"
+
+      # How long to wait for a Splunk search job to complete (seconds)
+      MAX_POLL_SECONDS: "60"
+
+      # Cron schedule for how often to run the query
+      CHECK_SCHEDULE: "*/15 * * * *"
+
+      # Set to "true" to run a check immediately when the container starts
+      RUN_ON_STARTUP: "false"

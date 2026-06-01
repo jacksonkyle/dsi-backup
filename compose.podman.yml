@@ -1,0 +1,57 @@
+services:
+  dsi-backup:
+    build: .
+    restart: unless-stopped
+    environment:
+      # ── Required ──────────────────────────────────────────────────────────
+      GCS_BUCKET: your-bucket-name
+      GCS_SERVICE_ACCOUNT_JSON: ""
+
+      # ── Optional ──────────────────────────────────────────────────────────
+      # GCS_PROJECT_ID: your-project-id
+
+      VOLUMES_PATH: /volumes
+
+      # Named volumes mount data directly (no _data subdirectory like Docker has)
+      VOLUMES_DATA_SUBDIR: ""
+
+      BACKUP_PREFIX: dokploy-backups
+      BACKUP_HOSTNAME: my-server
+      BACKUP_SCHEDULE: "0 2 * * *"
+      BACKUP_RETENTION_DAYS: "30"
+      RUN_ON_STARTUP: "false"
+
+    volumes:
+      # Mount each Podman named volume here (read-only).
+      # Run  podman volume ls  to list your volumes, then add them below.
+      #
+      # Format:  - <podman-volume-name>:/volumes/<label>:ro
+      #
+      # - my_app_data:/volumes/app-data:ro
+      # - my_db_data:/volumes/db-data:ro
+      - example_volume:/volumes/example-volume:ro
+
+  splunk-alert:
+    build: .
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/splunk-entrypoint.sh"]
+    environment:
+      # ── Required ──────────────────────────────────────────────────────────
+      SPLUNK_HOST: https://splunk.mycompany.com:8089
+      SPLUNK_TOKEN: ""
+      SPLUNK_QUERY: "search index=main (level=error OR level=critical)"
+      TEAMS_WEBHOOK_URL: ""
+
+      # ── Optional ──────────────────────────────────────────────────────────
+      SPLUNK_TIMERANGE: "-15m"
+      ALERT_THRESHOLD: "1"
+      RESULT_SAMPLE_SIZE: "5"
+      MAX_POLL_SECONDS: "60"
+      CHECK_SCHEDULE: "*/15 * * * *"
+      RUN_ON_STARTUP: "false"
+
+volumes:
+  # Declare each external volume listed in dsi-backup above.
+  # Podman will error on startup if a volume listed here does not exist.
+  example_volume:
+    external: true
